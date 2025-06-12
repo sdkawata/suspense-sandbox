@@ -1,34 +1,64 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { Suspense, useEffect } from 'react'
 
+const newS = () => {
+  let p: Promise<string> | string | undefined = undefined
+  return () => {
+    if (p === undefined) {
+      p = new Promise((resolve) => {
+        setTimeout(() => {
+          resolve('done')
+          console.log('resolved')
+        }, 10)
+      }).then(() => {p = 'done'})
+      throw p
+    } else if (p instanceof Promise) {
+      throw p
+    } else {
+      return p
+    }
+  }
+}
+
+const map = {}
+
+const lazyNews = (key: string) => {
+  if (map[key]) {
+    return map[key]
+  }
+  map[key] = newS()
+  console.log('map', map)
+  return map[key]
+}
+
+const P = ({children}) => {
+  const s = lazyNews('P')()
+  useEffect(() => {
+    console.log('parent component useEffect called')
+  }, [])
+  return <div>{s}{children}</div>
+}
+
+const C = () => {
+  const s = lazyNews('C')()
+  useEffect(() => {
+    console.log('children component useEffect called')
+  }, [])
+  return <div>{s}</div>
+}
+
+// この場合children -> parentになる
 function App() {
-  const [count, setCount] = useState(0)
-
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    <Suspense fallback={<div>Loading...</div>}>
+      <P><Suspense><C/></Suspense></P>
+    </Suspense>
+  )
+}
+
+// この場合parent -> childrenになる
+function App2() {
+  return (
+    <P><Suspense><C/></Suspense></P>
   )
 }
 
