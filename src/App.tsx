@@ -62,4 +62,6 @@ function App2() {
   )
 }
 
+// timeoutを　1000msにすると常にparent->childrenになる
+
 export default App
